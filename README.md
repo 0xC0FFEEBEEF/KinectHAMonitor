@@ -63,7 +63,7 @@ ssh -Y user@SERVER_IP   # e.g.  ssh -Y crazycatlady@10.0.0.22
 ```
 
 ---
-### 0  Install Python 3.10 (Ubuntu 23/24 LTS)
+### Install Python 3.10 (Ubuntu 23/24 LTS)
 
 Ubuntu Server 22.04+ ships Python 3.11 / 3.12 by default; libfreenect’s
 bindings only compile on 3.10.  Install 3.10 side-by-side:
