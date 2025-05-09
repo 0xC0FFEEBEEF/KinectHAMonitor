@@ -1,0 +1,12 @@
+# Ignore user config
+config.conf
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore venv
+kinectenv/
+
+# Ignore build files
+libfreenect/build/
