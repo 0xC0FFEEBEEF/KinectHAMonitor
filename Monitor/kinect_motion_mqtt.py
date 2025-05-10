@@ -80,7 +80,7 @@ def connect_mqtt(broker: str) -> mqtt.Client:
             for retry in range(5):
                 print(f"MQTT connect failed, retrying in 5 seconds |!| attempt number ({retry + 1}/5)")
                 time.sleep(5)
-                print("\nExiting after 5 attempts.. have you made a config file?")
+        print("\nExiting after 5 attempts.. have you made a config file?")
         sys.exit(0)        
 
 def publish_state(client: mqtt.Client, topic: str, state: str) -> None:
