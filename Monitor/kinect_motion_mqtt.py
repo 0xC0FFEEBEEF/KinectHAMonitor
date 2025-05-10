@@ -27,24 +27,36 @@ import cv2
 import freenect
 import numpy as np
 import paho.mqtt.client as mqtt
+import configparser
+
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../Config/config.conf")
+config = configparser.ConfigParser()
+if os.path.exists(CONFIG_PATH):
+    config.read(CONFIG_PATH)
+else:
+    config['DEFAULT'] = {}
 
 # --------------------------------------------------------------------------- #
 # CLI / configuration
 # --------------------------------------------------------------------------- #
 def get_args() -> argparse.Namespace:
+    defaults = config['DEFAULT']
     p = argparse.ArgumentParser(description="Kinect → MQTT motion bridge")
-    p.add_argument("--broker", default=None, help="MQTT broker IP or hostname")
-    p.add_argument("--topic", default=os.getenv("MQTT_TOPIC", "kinect/motion"),
-                   help="MQTT topic for motion state")
-    p.add_argument("--threshold", type=int,
-                   default=int(os.getenv("MOTION_THRESHOLD", 1_000_000)),
+
+    p.add_argument("--broker", default=defaults.get("BROKER"), help="MQTT broker IP or hostname")
+    p.add_argument("--topic", default=defaults.get("TOPIC", "kinect/motion"), help="MQTT topic for motion state")
+    p.add_argument("--threshold", type=int, default=int(defaults.get("THRESHOLD", 1_000_000)),
                    help="Pixel-sum threshold that counts as motion")
-    p.add_argument("--quiet", action="store_true", help="Suppress motion logging output")
+    p.add_argument("--quiet", action="store_true", default=defaults.get("QUIET", "false").lower() == "true",
+                   help="Suppress motion logging output")
+
     args = p.parse_args()
 
     if not args.broker:
         args.broker = input("Enter MQTT broker IP or hostname [default: localhost]: ").strip() or "localhost"
+
     return args
+
 
 ARGS = get_args()
 
@@ -65,8 +77,11 @@ def connect_mqtt(broker: str) -> mqtt.Client:
                 print(f"🛰️  Connected to MQTT broker @ {broker}")
             return client
         except OSError as e:
-            print(f"MQTT connect failed ({e}); retrying in 10 s …")
-            time.sleep(10)
+            for retry in range(5):
+                print(f"MQTT connect failed, retrying in 5 seconds |!| attempt number ({retry + 1}/5)")
+                time.sleep(5)
+                print("\nExiting after 5 attempts.. have you made a config file?")
+        sys.exit(0)        
 
 def publish_state(client: mqtt.Client, topic: str, state: str) -> None:
     client.publish(topic, state, retain=False)
