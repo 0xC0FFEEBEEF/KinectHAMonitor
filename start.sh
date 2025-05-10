@@ -35,9 +35,24 @@ ARGS=""
 [ -n "$THRESHOLD" ] && ARGS+=" --threshold $THRESHOLD"
 
 echo "🔁 Checking for updates..."
-git reset --hard HEAD >/dev/null 2>&1
-git pull origin main >/dev/null 2>&1
-echo "✅ Repo is up to date."
+git fetch origin main >/dev/null 2>&1
+
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse origin/main)
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+    echo "✅ Repo is up to date."
+else
+    echo "🚨 Update available!"
+    read -p "Would you like to pull the latest changes? (y/N): " answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        git pull origin main
+        echo "✅ Update pulled successfully."
+    else
+        echo "❌ Skipped update."
+    fi
+fi
+
 
 # Activate venv & run script
 source kinectenv/bin/activate
