@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 cd "$(dirname "$0")"
 
@@ -10,7 +11,7 @@ if [ ! -f config.conf ]; then
   else
     echo "⚠️  config.example.conf missing. Creating config.conf interactively..."
 
-    # Prompt user for broker and write full config.conf
+    # Prompt user for broker and write config.conf
     read -p "Enter MQTT broker IP or hostname [default: localhost]: " BROKER
     BROKER=${BROKER:-localhost}
     cat <<EOF > config.conf
@@ -27,14 +28,14 @@ fi
 # Load config
 source config.conf
 
-# Convert config values to CLI args
+# Convert config to CLI args
 ARGS=""
 [ "$QUIET" == "true" ] && ARGS+=" --quiet"
 [ -n "$BROKER" ] && ARGS+=" --broker $BROKER"
 [ -n "$TOPIC" ] && ARGS+=" --topic $TOPIC"
 [ -n "$THRESHOLD" ] && ARGS+=" --threshold $THRESHOLD"
 
-# Check for updates, prompt user for install
+# Check for updates
 echo "🔁 Checking for updates..."
 git fetch origin main >/dev/null 2>&1
 
@@ -47,6 +48,7 @@ else
     echo "🚨 Update available!"
     read -p "Would you like to pull the latest changes? (y/N): " answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
+        git reset --hard HEAD
         git pull origin main
         echo "✅ Update pulled successfully."
     else
@@ -54,8 +56,13 @@ else
     fi
 fi
 
+# Activate virtualenv and run
+if [ ! -d "kinectenv" ]; then
+  echo "🛠 Creating virtual environment..."
+  python3.10 -m venv kinectenv
+fi
 
-# Activate venv & run script
 source kinectenv/bin/activate
+
 cd Monitor
 exec python3 kinect_motion_mqtt.py $ARGS
