@@ -34,6 +34,7 @@ ARGS=""
 [ -n "$TOPIC" ] && ARGS+=" --topic $TOPIC"
 [ -n "$THRESHOLD" ] && ARGS+=" --threshold $THRESHOLD"
 
+# Check for updates, prompt user for install
 echo "🔁 Checking for updates..."
 git fetch origin main >/dev/null 2>&1
 
