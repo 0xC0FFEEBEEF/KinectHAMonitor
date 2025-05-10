@@ -18,7 +18,7 @@ if [ ! -f config.conf ]; then
 BROKER="$BROKER"
 TOPIC="kinect/motion"
 THRESHOLD="1000000"
-QUIET="false"
+QUIET="true"
 EOF
     echo "✅ Created config.conf with entered broker ($BROKER)."
   fi
