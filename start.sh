@@ -3,6 +3,14 @@ set -e
 
 cd "$(dirname "$0")"
 
+# Parse extra CLI flags (e.g. --debug)
+EXTRA_ARGS=""
+for arg in "$@"; do
+  if [[ "$arg" == "--debug" ]]; then
+    EXTRA_ARGS+=" --debug"
+  fi
+done
+
 # 1) Check for updates
 echo "🔁 Checking for updates..."
 git fetch origin main >/dev/null 2>&1
@@ -30,11 +38,9 @@ if [ ! -f config.conf ]; then
   else
     echo "⚠️  config.example.conf missing. Creating config.conf interactively..."
 
-    # Broker
     read -p "Enter MQTT broker IP or hostname [default: localhost]: " BROKER
     BROKER=${BROKER:-localhost}
 
-    # Optional auth?
     read -p "Does your MQTT broker require authentication? (y/N): " auth_required
     if [[ "$auth_required" =~ ^[Yy]$ ]]; then
       read -p "Enter MQTT username: " MQTT_USER
@@ -42,12 +48,11 @@ if [ ! -f config.conf ]; then
       echo ""
     fi
 
-    # Write out config
     cat <<EOF > config.conf
 # Generated config.conf
 BROKER=$BROKER
 TOPIC=kinect/motion
-THRESHOLD=1000000
+THRESHOLD=8000000
 QUIET=true
 EOF
 
@@ -64,12 +69,13 @@ fi
 # 3) Load config
 source config.conf
 
-# 4) Build CLI args (no user/pass on the CLI side)
+# 4) Build CLI args
 ARGS=""
 [ "$QUIET" == "true" ]   && ARGS+=" --quiet"
-[ -n "$BROKER" ]        && ARGS+=" --broker $BROKER"
-[ -n "$TOPIC" ]         && ARGS+=" --topic $TOPIC"
-[ -n "$THRESHOLD" ]     && ARGS+=" --threshold $THRESHOLD"
+[ -n "$BROKER" ]         && ARGS+=" --broker $BROKER"
+[ -n "$TOPIC" ]          && ARGS+=" --topic $TOPIC"
+[ -n "$THRESHOLD" ]      && ARGS+=" --threshold $THRESHOLD"
+ARGS+=$EXTRA_ARGS
 
 # 5) Ensure and activate virtualenv
 if [ ! -d "kinectenv" ]; then
@@ -80,4 +86,10 @@ source kinectenv/bin/activate
 
 # 6) Launch the monitor
 cd Monitor
-exec python3 kinect_motion_mqtt.py $ARGS
+export FREENECT_LOGLEVEL=none
+while true; do
+  python3 kinect_motion_mqtt.py $ARGS
+  echo "⚠️  Script crashed with code $? – restarting in 5 seconds..."
+  sleep 5
+done
+
