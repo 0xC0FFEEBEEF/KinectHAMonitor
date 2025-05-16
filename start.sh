@@ -4,10 +4,12 @@ set -e
 cd "$(dirname "$0")"
 
 # Parse extra CLI flags (e.g. --debug)
-EXTRA_ARGS=""
+EXTRA_ARGS="$@"
+DEBUG_MODE=false
 for arg in "$@"; do
   if [[ "$arg" == "--debug" ]]; then
     EXTRA_ARGS+=" --debug"
+    DEBUG_MODE=true
   fi
 done
 
@@ -79,17 +81,19 @@ ARGS+=$EXTRA_ARGS
 
 # 5) Ensure and activate virtualenv
 if [ ! -d "kinectenv" ]; then
-  echo "🛠 Creating virtual environment..."
+  echo "💠 Creating virtual environment..."
   python3.10 -m venv kinectenv
 fi
 source kinectenv/bin/activate
 
-# 6) Launch the monitor
+# 6) Launch the runloop version (default)
 cd Monitor
 export FREENECT_LOGLEVEL=none
 while true; do
-  python3 kinect_motion_mqtt.py $ARGS
+  if [ "$DEBUG_MODE" = true ]; then
+    echo "🔎 Launching in DEBUG mode"
+  fi
+  python3 kinect_motion_runloop.py $ARGS
   echo "⚠️  Script crashed with code $? – restarting in 5 seconds..."
   sleep 5
 done
-
